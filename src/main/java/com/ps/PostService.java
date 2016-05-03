@@ -1,32 +1,24 @@
-package com.postshare.post.services;
-
+package com.ps;
 
 import java.util.List;
-
 import java.util.Random;
 
-
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.ISODateTimeFormat;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import com.postshare.post.objects.Post;
-import com.postshare.post.repositories.CustomPostRepository;
-import com.postshare.post.repositories.PostRepository;
-
-
-
 
 @Service
 public class PostService {
-
 	
 	@Autowired
 	private PostRepository postRepo;
 	
-	@Autowired
-	private CustomPostRepository customPostRepo;
-	
-	
+	//@Autowired
+	//private ICustomPostRepository customPostRepo;
+
 	public boolean validatePostId(int postId){
 		if(!(postRepo.exists(postId)))
 				return false;
@@ -39,12 +31,17 @@ public class PostService {
 		return r.nextInt(9000) + 1000; 
 	}
 	
-	public Post createPost(Post post) {
+	public Post addPost(Post post) {
 		
 		Integer id = generateID();
 		while(postRepo.exists(id))
 			id = generateID();
-		post.setPost_id(id);
+		post.id=(id);
+		post.voteScore=0;
+		DateTime dt = new DateTime(DateTimeZone.UTC);
+		
+		post.created_on =  dt.toString(ISODateTimeFormat.dateTime().withZoneUTC());
+		postRepo.save(post);
 		
 		return post;
 
@@ -53,7 +50,13 @@ public class PostService {
 		return postRepo.findById(postId);
 	}
 	public Post updatePost(int post_id,Post post) {		
-		Post oldPost=postRepo.findById(post_id);		
+		Post oldPost=postRepo.findById(post_id);
+		if(post.headline!=null)
+			oldPost.headline=(post.headline);
+		if(post.content!=null)
+			oldPost.content=(post.content);
+		postRepo.save(oldPost);
+		
 		return oldPost;
 		
 	}
@@ -68,9 +71,9 @@ public class PostService {
 		
 	}
 
-	public boolean voteOnPost(Integer post_id, int vote)  {
+	public boolean voteOnPost(Integer post_id)  {
 		Post updatePost=postRepo.findById(post_id);
-		updatePost.setVotescore(updatePost.getVotescore()+vote);
+		updatePost.voteScore=(updatePost.voteScore+1);
 		postRepo.save(updatePost);		
 		return true;
 	}
@@ -82,20 +85,12 @@ public class PostService {
 	}
 
 
-	public List<Post> listTopPosts() {
-		List<Post> allPosts=customPostRepo.findByVoteScore();
+	/*public List<Post> listTopPosts() {
+		List<Post> allPosts=postRepo.findAll(new Sort(Sort.Direction.DESC, "votescore"));;
 		
 		return allPosts;
 		
 		
-		
-		
-	}
-	
-	
-		
-		
-
-	
+	}*/
 
 }
